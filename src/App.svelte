@@ -33,10 +33,16 @@
 
   function clear() {
     players = [];
+    localStorage.setItem("players", "[]");
+    clearNoPlayers();
+  }
+
+  function clearNoPlayers() {
     kola = [];
     isSubmitted = false;
+    localName = "";
+    editName = "";
     localStorage.setItem("kola", "[]");
-    localStorage.setItem("players", "[]");
     localStorage.setItem("name", "");
   }
 
@@ -280,7 +286,8 @@
     {#if kola.length !== 0 && kola.at(-1).skupine.length === 1 && isSubmitted}
       <button on:click={() => isSubmitted = false}>Uredi kola</button>
       <button on:click={endCompetition}>Zaključi turnir</button>
-      <button on:click={clear}>Ustvari nov turnir</button>
+      <button on:click={clear}>Ustvari nov turnir (izbriše vse)</button>
+      <button on:click={clearNoPlayers}>Ustvari nov turnir (izbriše vse razen igralcev)</button>
     {:else}
       {#if kola.length !== 0 && isSubmitted}
         <button on:click={() => isSubmitted = false}>Uredi kola</button>
