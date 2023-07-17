@@ -23,6 +23,7 @@
   let players = JSON.parse(localStorage.getItem("players"));
 
   const colors = ["", "lightgray", "lightgreen", "orange"];
+  const print_colors = ["", "", "green", "orange"];
 
   let today = new Date();
   const dd = String(today.getDate()).padStart(2, '0');
@@ -39,7 +40,6 @@
 
   function clearNoPlayers() {
     kola = [];
-    isSubmitted = false;
     localName = "";
     editName = "";
     localStorage.setItem("kola", "[]");
@@ -63,7 +63,6 @@
   }
 
   function generateFirstKolo() {
-    isSubmitted = false;
     shuffleArray(players);
     let skupine = [];
     for (let i = 0; i < Math.ceil(players.length/4); i++) {
@@ -75,13 +74,13 @@
         ]});
     }
     localStorage.setItem("kola", JSON.stringify([
-      {id: 1, skupine: skupine}
+      {id: 1, skupine: skupine, submitted: false}
     ]));
     kola = JSON.parse(localStorage.getItem("kola"));
   }
 
   function calculateKolo() {
-    isSubmitted = false;
+    kola[kola.length-1].submitted = true;
     let kolo = kola[kola.length-1];
     let topPlayers1 = [];
     let topPlayers2 = [];
@@ -157,8 +156,6 @@
 
   let endBest = undefined;
 
-  let isSubmitted = kola.length > 1;
-
   function addPlayer() {
     players.push(player);
     localStorage.setItem("players", JSON.stringify(players));
@@ -197,7 +194,7 @@
           {#each skupina.players.sort((a,b) => b.points - a.points) as player, i}
             <tr>
               <td>{#if kolo.skupine.length !== 1}{skupina.id}{:else}{i+1}.{/if}</td>
-              <td><span title="{player.notification}" style="color: {colors[isGoingOnward(player.name, k)]};">{player.name} {#if player.notification}⚠️{/if}</span></td>
+              <td><span title="{player.notification}" style="color: {print_colors[isGoingOnward(player.name, k)]};">{player.name} {#if player.notification}⚠️{/if}</span></td>
               <td><span style="color: {player.points < 0 ? 'red' : (player.points > 0 ? 'green' : 'gray')}">{player.points}</span></td>
             </tr>
           {/each}
@@ -247,8 +244,9 @@
     {#each kola as kolo, k}
       <h2>{kolo.id}. kolo <button style="height: 25px; font-size: 10px;" on:click={() => deleteKolo(kolo.id)}>Izbriši kolo</button></h2>
 
-      {#if !isSubmitted}
+      {#if !kolo.submitted}
         Postavitev po skupinah v tem kolu je neuradna. Še vedno lahko pride do sprememb.
+        <p/>
       {/if}
 
       <div class="wrapper">
@@ -262,14 +260,14 @@
               </tr>
               {#each skupina.players as player}
                 <tr>
-                  {#if !(player.name !== undefined && isSubmitted)}
+                  {#if !(player.name !== undefined && kolo.submitted)}
                     <td><input type="text" bind:value={player.name} on:change={() => player.notification = "Igralec je bil vpisan ročno."}></td>
                     <td><input type="number" on:change={() => localStorage.setItem("kola", JSON.stringify(kola))} bind:value={player.points}></td>
                   {:else}
                     <td><span title="{player.notification}">
                       <span style="color: {colors[isGoingOnward(player.name, k)]}">{player.name}</span>
                       {#if player.notification}⚠️{/if}</span></td>
-                    <td style="text-align: right; color: {player.points < 0 ? 'red' : (player.points > 0 ? 'green' : 'gray')}">{player.points}</td>
+                    <td style="text-align: right; color: {player.points < 0 ? 'red' : (player.points > 0 ? '#00aa00' : 'gray')}">{player.points}</td>
                   {/if}
                 </tr>
               {/each}
@@ -277,22 +275,29 @@
           </div>
         {/each}
       </div>
+
+      <p/>
+      {#if !kolo.submitted && kola.length !== 0}
+        <button on:click={() => {
+          kola[k].submitted = true;
+          localStorage.setItem("kola", JSON.stringify(kola));
+        }}>Zaključi vpisovanje</button>
+      {/if}
+
+      {#if kola.length !== 0 && kolo.submitted}
+        <button on:click={() => {
+          kola[k].submitted = false;
+          localStorage.setItem("kola", JSON.stringify(kola));
+        }}>Uredi kolo</button>
+      {/if}
     {/each}
     <p/>
-    {#if !isSubmitted && kola.length !== 0}
-      <button on:click={() => isSubmitted = true}>Zaključi ročno vpisovanje imen</button>
-      <p/>
-    {/if}
-    {#if kola.length !== 0 && kola.at(-1).skupine.length === 1 && isSubmitted}
-      <button on:click={() => isSubmitted = false}>Uredi kola</button>
+    {#if kola.length !== 0 && kola.at(-1).skupine.length === 1 && kola.at(-1).submitted}
       <button on:click={endCompetition}>Zaključi turnir</button>
       <button on:click={clear}>Ustvari nov turnir (izbriše vse)</button>
       <button on:click={clearNoPlayers}>Ustvari nov turnir (izbriše vse razen igralcev)</button>
-    {:else}
-      {#if kola.length !== 0 && isSubmitted}
-        <button on:click={() => isSubmitted = false}>Uredi kola</button>
-        <button on:click={calculateKolo}>Kalkuliraj novo kolo</button>
-      {/if}
+    {:else if kola.length !== 0 && kola[kola.length-1].submitted}
+      <button on:click={calculateKolo}>Kalkuliraj novo kolo</button>
     {/if}
     <p/>
     {#if kola.length !== 0}
