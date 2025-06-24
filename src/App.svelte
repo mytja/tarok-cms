@@ -85,27 +85,30 @@
     let topPlayers1 = [];
     let topPlayers2 = [];
     let sidePlayers = [];
+
+    const onePlayer = document.getElementById("one-player").checked;
+
     for (let i = 0; i < kolo.skupine.length; i++) {
       let skupina = kolo.skupine[i];
       const top = skupina.players.sort((a,b) => b.points - a.points);
       const first = top[0];
-      const second = top[1];
-      const third = top[2];
-      const razmerje = third.points/Math.abs(second.points);
+      const second = onePlayer ? top[0] : top[1];
+      const third = onePlayer ? top[1] : top[2];
+      const razmerje = third.points / Math.abs(second.points);
       sidePlayers.push({name: third.name, ratio: razmerje});
       if (Math.round(Math.random()) === 0) {
         topPlayers1.push({name: first.name, points: 0});
-        topPlayers2.push({name: second.name, points: 0});
+        if (!onePlayer) topPlayers2.push({name: second.name, points: 0});
       } else {
         topPlayers1.push({name: second.name, points: 0});
-        topPlayers2.push({name: first.name, points: 0});
+        if (!onePlayer) topPlayers2.push({name: first.name, points: 0});
       }
     }
     console.log(sidePlayers);
     //console.log("pushed to arrays", topPlayers1, topPlayers2, sidePlayers);
     if ((topPlayers1.length + topPlayers2.length) % 4 !== 0) {
       const ratio = sidePlayers.sort((a,b) => b.ratio - a.ratio);
-      const missingPlayers = (topPlayers1.length + topPlayers2.length) % 4;
+      const missingPlayers = 4 - ((topPlayers1.length + topPlayers2.length) % 4);
       for (let i = 0; i < missingPlayers; i++) {
         if (topPlayers1.length % 4 !== 0) {
           topPlayers1.push({name: ratio[i].name, points: 0,
@@ -225,7 +228,7 @@
 
     {#if kola.length === 0}
       <h2>Igralci:</h2>
-      <input bind:value={player} style="width: 90%;" type="text"><button on:click={addPlayer}>Dodaj</button>
+      <input bind:value={player} on:keydown={(event) => {if (event.key === 'Enter'){ addPlayer(); }else{}}} style="width: 90%;" type="text"><button on:click={addPlayer}>Dodaj</button>
       <p/>
 
       {#each players as playerVal}
@@ -297,6 +300,19 @@
       <button on:click={clear}>Ustvari nov turnir (izbriše vse)</button>
       <button on:click={clearNoPlayers}>Ustvari nov turnir (izbriše vse razen igralcev)</button>
     {:else if kola.length !== 0 && kola[kola.length-1].submitted}
+      <fieldset>
+        <legend>Izberite število igralcev v vsaki skupini, ki gredo v naslednje kolo:</legend>
+        <div>
+          <input type="radio" id="one-player" name="player-count" value="one-player" checked />
+          <label for="one-player">Najboljši igralec</label>
+        </div>
+
+        <div>
+          <input type="radio" id="two-players" name="player-count" value="two-players" />
+          <label for="two-players">Dva najboljša igralca</label>
+        </div>
+      </fieldset>
+      <br>
       <button on:click={calculateKolo}>Kalkuliraj novo kolo</button>
     {/if}
     <p/>
@@ -306,9 +322,9 @@
     <p/>
     {#if kola.length !== 0 && endBest !== undefined}
       <h2>Zmagovalci</h2>
-      <span style="font-size: 36px;">🥇 {endBest[0].name} s {endBest[0].points} točkami.</span><p/>
-      <span style="font-size: 30px;">🥈 {endBest[1].name} s {endBest[1].points} točkami.</span><p/>
-      <span style="font-size: 24px;">🥉 {endBest[2].name} s {endBest[2].points} točkami.</span><p/>
+      <span style="font-size: 36px;">🥇 {endBest[0].name} {(endBest[0].points % 10 === 9 || endBest[0].points % 10 === 8 || endBest[0].points % 10 === 1 || endBest[0].points % 10 === 0 || endBest[0].points % 10 === 2 || endBest[0] < 0) ? 'z' : 's'} {endBest[0].points} {Math.abs(endBest[0].points) === 1 ? 'točko' : (Math.abs(endBest[0].points) === 2 ? 'točkama' : 'točkami')}.</span><p/>
+      <span style="font-size: 30px;">🥈 {endBest[1].name} {(endBest[1].points % 10 === 9 || endBest[1].points % 10 === 8 || endBest[1].points % 10 === 1 || endBest[1].points % 10 === 0 || endBest[1].points % 10 === 2 || endBest[1] < 0) ? 'z' : 's'} {endBest[1].points} {Math.abs(endBest[1].points) === 1 ? 'točko' : (Math.abs(endBest[1].points) === 2 ? 'točkama' : 'točkami')}.</span><p/>
+      <span style="font-size: 24px;">🥉 {endBest[2].name} {(endBest[2].points % 10 === 9 || endBest[2].points % 10 === 8 || endBest[2].points % 10 === 1 || endBest[2].points % 10 === 0 || endBest[2].points % 10 === 2 || endBest[2] < 0) ? 'z' : 's'} {endBest[2].points} {Math.abs(endBest[2].points) === 1 ? 'točko' : (Math.abs(endBest[2].points) === 2 ? 'točkama' : 'točkami')}.</span><p/>
       <p/>
       Čestitamo prav vsem tekmovalcem in hvala za udeležbo.
     {/if}
